@@ -19,6 +19,11 @@ class RemoteApi {
           queryParameters: params.urlParams);
       return responseReturn(response);
     } on DioException catch (e) {
+      print(e);
+      if (e.response == null) {
+        print("///////////////////");
+        throw AppException(msg: "no internet connection");
+      }
       return responseReturn(e.response!);
     } on Exception catch (e) {
       throw AppException(msg: "$e");

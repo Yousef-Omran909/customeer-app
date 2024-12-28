@@ -9,97 +9,79 @@ import '../../parameters/get_customers_params.dart';
 import 'custom_button.dart';
 import 'custom_text_form.dart';
 
-class ManageCustomer extends StatelessWidget {
+class ManageCustomer extends StatefulWidget {
   ManageCustomer(
       {super.key,
-      this.isEdit,
-      this.firstNameController,
-      this.lastNameController,
-      this.emailController,
+      this.isEdit = false,
+      this.firstName,
+      this.lastName,
+      this.email,
       this.id,
-      this.phoneController,
+      this.phoneNumber,
       this.image});
-  final bool? isEdit;
-  final TextEditingController? firstNameController;
-  final TextEditingController? lastNameController;
-  final TextEditingController? emailController;
-  final TextEditingController? phoneController;
-  final String? image;
+  final bool isEdit;
+  final String? firstName, lastName, email, phoneNumber, image;
+
   final int? id;
+
+  @override
+  State<ManageCustomer> createState() => _ManageCustomerState();
+}
+
+class _ManageCustomerState extends State<ManageCustomer> {
+  TextEditingController firstNameController = TextEditingController();
+
+  TextEditingController lastNameController = TextEditingController();
+
+  TextEditingController emailController = TextEditingController();
+
+  TextEditingController phoneNumberController = TextEditingController();
+
+  @override
+  void initState() {
+    firstNameController.text = widget.firstName ?? '';
+    lastNameController.text = widget.lastName ?? '';
+    emailController.text = widget.email ?? '';
+    phoneNumberController.text = widget.phoneNumber ?? '';
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<CustomerBloc, CustomerState>(
+      listenWhen: (pre, cur) =>
+          cur is AddedCustomerState ||
+          cur is AddFailedCustomerState ||
+          cur is AddLoadingCustomerState ||
+          cur is EditLoadingState ||
+          cur is EditFailedState ||
+          cur is EditLoadedState,
+      buildWhen: (previous, cur) =>
+          cur is AddedCustomerState ||
+          cur is AddFailedCustomerState ||
+          cur is AddLoadingCustomerState ||
+          cur is EditLoadingState ||
+          cur is EditFailedState ||
+          cur is EditLoadedState,
+      listener: (context, state) {
+        if (state is AddedCustomerState || state is EditLoadedState) {
+          context.read<CustomerBloc>().add(
+              GetCustomerEvent(params: GetAllParams(body: GetAllParamsBody())));
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text("Added")));
+        } else if (state is AddFailedCustomerState ||
+            state is EditFailedState) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text("invalid")));
+        }
+      },
       builder: (context, state) {
-        if (state is LoadingAddState) {
+        print(state);
+        if (state is AddLoadingCustomerState) {
           return Center(
             child: CircularProgressIndicator(),
-          );
-        } else if (state is AddedCustomerState) {
-          return Column(
-            children: [
-              Center(
-                child: CircleAvatar(
-                    backgroundColor: Colors.white,
-                    radius: 70,
-                    child: image != null
-                        ? Image.network('$image')
-                        : Image.asset("assets/images/R.png")),
-              ),
-              CustomTextForm(
-                hint: "first name",
-                controller: firstNameController,
-              ),
-              CustomTextForm(
-                hint: "last name",
-                controller: lastNameController,
-              ),
-              CustomTextForm(
-                hint: "email",
-                controller: emailController,
-              ),
-              CustomTextForm(
-                hint: "phone number",
-                controller: phoneController,
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              isEdit == true
-                  ? CustomButton(
-                      text: "edit",
-                      onPressed: () {
-                        print(isEdit);
-                        CustomerRepository().editCustomer(EditCustomerParams(
-                            body: EditCustomerParamsBody(
-                                id: id,
-                                cityId: 1,
-                                countryId: 6,
-                                currencyId: 1,
-                                email: emailController?.text,
-                                firstName: firstNameController?.text,
-                                lastName: lastNameController?.text,
-                                phoneNumber: phoneController?.text,
-                                stateId: 8)));
-                      },
-                    )
-                  : CustomButton(
-                      text: "Add",
-                      onPressed: () {
-                        context.read<CustomerBloc>().add(AddCustomerEvent(
-                            params: CreateCustomerParams(
-                                body: CreateCustomerParamsBody(
-                                    cityId: 1,
-                                    countryId: 6,
-                                    currencyId: 1,
-                                    email: emailController?.text,
-                                    firstName: firstNameController?.text,
-                                    lastName: lastNameController?.text,
-                                    phoneNumber: phoneController?.text,
-                                    stateId: 8))));
-                      },
-                    ),
-            ],
           );
         } else {
           return Column(
@@ -108,8 +90,8 @@ class ManageCustomer extends StatelessWidget {
                 child: CircleAvatar(
                     backgroundColor: Colors.white,
                     radius: 70,
-                    child: image != null
-                        ? Image.network('$image')
+                    child: widget.image != null
+                        ? Image.network('${widget.image}')
                         : Image.asset("assets/images/R.png")),
               ),
               CustomTextForm(
@@ -126,27 +108,27 @@ class ManageCustomer extends StatelessWidget {
               ),
               CustomTextForm(
                 hint: "phone number",
-                controller: phoneController,
+                controller: phoneNumberController,
               ),
-              SizedBox(
+              const SizedBox(
                 height: 10,
               ),
-              isEdit == true
+              widget.isEdit
                   ? CustomButton(
                       text: "edit",
                       onPressed: () {
-                        print(isEdit);
-                        CustomerRepository().editCustomer(EditCustomerParams(
-                            body: EditCustomerParamsBody(
-                                id: id,
-                                cityId: 1,
-                                countryId: 6,
-                                currencyId: 1,
-                                email: emailController?.text,
-                                firstName: firstNameController?.text,
-                                lastName: lastNameController?.text,
-                                phoneNumber: phoneController?.text,
-                                stateId: 8)));
+                        context.read<CustomerBloc>().add(EditCustomerEvent(
+                            params: EditCustomerParams(
+                                body: EditCustomerParamsBody(
+                                    id: widget.id,
+                                    cityId: 1,
+                                    countryId: 6,
+                                    currencyId: 1,
+                                    email: emailController.text,
+                                    firstName: firstNameController.text,
+                                    lastName: lastNameController.text,
+                                    phoneNumber: phoneNumberController.text,
+                                    stateId: 8))));
                       },
                     )
                   : CustomButton(
@@ -158,31 +140,15 @@ class ManageCustomer extends StatelessWidget {
                                     cityId: 1,
                                     countryId: 6,
                                     currencyId: 1,
-                                    email: emailController?.text,
-                                    firstName: firstNameController?.text,
-                                    lastName: lastNameController?.text,
-                                    phoneNumber: phoneController?.text,
+                                    email: emailController.text,
+                                    firstName: firstNameController.text,
+                                    lastName: lastNameController.text,
+                                    phoneNumber: phoneNumberController.text,
                                     stateId: 8))));
                       },
                     ),
             ],
           );
-        }
-      },
-      listener: (context, state) {
-        if (state is AddedCustomerState) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text("Added")));
-
-          context.read<CustomerBloc>().add(
-              GetCustomerEvent(params: GetAllParams(body: GetAllParamsBody())));
-        } else if (state is FailedAddCustomerState) {
-          context.read<CustomerBloc>().add(
-              GetCustomerEvent(params: GetAllParams(body: GetAllParamsBody())));
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text("invalid")));
         }
       },
     );

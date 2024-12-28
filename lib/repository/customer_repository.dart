@@ -25,6 +25,7 @@ class CustomerRepository {
       );
       return right(data.data);
     } on AppException catch (e) {
+      print(".....................");
       return left(ErrorModel(errors: [e.toString()]));
     }
   }

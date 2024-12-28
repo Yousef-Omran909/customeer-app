@@ -1,7 +1,9 @@
+import 'package:customer_app/bloc/customer_bloc.dart';
 import 'package:customer_app/parameters/delete_customer_params.dart';
 import 'package:customer_app/repository/customer_repository.dart';
 import 'package:customer_app/screens/customer_details/customer_details.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 class CustomerCard extends StatelessWidget {
@@ -26,8 +28,9 @@ class CustomerCard extends StatelessWidget {
           children: [
             SlidableAction(
               onPressed: (context) {
-                CustomerRepository().deleteCustomer(DeleteCustomerParams(
-                    body: DeleteCustomerParamsBody(id: id)));
+                context.read<CustomerBloc>().add(DeleteCustomerEvent(
+                    params: DeleteCustomerParams(
+                        body: DeleteCustomerParamsBody(id: id))));
               },
               backgroundColor: Color(0xFF21B7CA),
               foregroundColor: Colors.white,
@@ -40,7 +43,7 @@ class CustomerCard extends StatelessWidget {
           elevation: 10,
           child: ListTile(
             onTap: () {
-              Navigator.pushReplacement(
+              Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (context) => CustomerDetails(
