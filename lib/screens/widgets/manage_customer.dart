@@ -1,7 +1,6 @@
 import 'package:customer_app/bloc/customer_bloc.dart';
 import 'package:customer_app/parameters/create_customer_params.dart';
 import 'package:customer_app/parameters/edit_customer_params.dart';
-import 'package:customer_app/repository/customer_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -10,7 +9,7 @@ import 'custom_button.dart';
 import 'custom_text_form.dart';
 
 class ManageCustomer extends StatefulWidget {
-  ManageCustomer(
+  const ManageCustomer(
       {super.key,
       this.isEdit = false,
       this.firstName,
@@ -65,8 +64,8 @@ class _ManageCustomerState extends State<ManageCustomer> {
           cur is EditLoadedState,
       listener: (context, state) {
         if (state is AddedCustomerState || state is EditLoadedState) {
-          context.read<CustomerBloc>().add(
-              GetCustomerEvent(params: GetAllParams(body: GetAllParamsBody())));
+          context.read<CustomerBloc>().add(GetCustomerEvent(
+              params: GetAllParams(body: GetAllParamsBody(page: 0))));
           Navigator.pop(context);
           ScaffoldMessenger.of(context)
               .showSnackBar(const SnackBar(content: Text("Added")));

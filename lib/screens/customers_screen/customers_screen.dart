@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/get_all_customers_model.dart';
 import '../../parameters/get_customers_params.dart';
+import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
@@ -15,12 +16,22 @@ class CustomersScreen extends StatefulWidget {
 
 class _CustomersScreenState extends State<CustomersScreen> {
   bool isLoading = false;
-  GetAllCustomersModel? getAllCustomers;
+  List<CustomerModel> customers = [];
+  final refreshController = RefreshController();
+  int page = 1;
+  paginationGetAllFun() {
+    context.read<CustomerBloc>().add(GetCustomerEvent(
+        params: GetAllParams(body: GetAllParamsBody(page: 1))));
+  }
+
+  onLoading(int pageNum) {
+    context.read<CustomerBloc>().add(GetCustomerEvent(
+        params: GetAllParams(body: GetAllParamsBody(page: pageNum))));
+  }
+
   @override
   void initState() {
-    context
-        .read<CustomerBloc>()
-        .add(GetCustomerEvent(params: GetAllParams(body: GetAllParamsBody())));
+    paginationGetAllFun();
     super.initState();
   }
 
@@ -53,11 +64,11 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 current is GetAllLoadedState || current is GetAllLoadingState,
             listener: (context, state) {
               if (state is GetAllLoadedState) {
-                getAllCustomers = state.customers;
+                customers.addAll(state.customers?.customers ?? []);
+                refreshController.loadComplete();
+                refreshController.refreshCompleted();
               } else if (state is DeleteLoadedState) {
-                context.read<CustomerBloc>().add(GetCustomerEvent(
-                    params: GetAllParams(body: GetAllParamsBody())));
-
+                paginationGetAllFun();
                 ScaffoldMessenger.of(context)
                     .showSnackBar(const SnackBar(content: Text("Deleted")));
               } else if (state is DeleteFailedState) {
@@ -66,29 +77,37 @@ class _CustomersScreenState extends State<CustomersScreen> {
               }
             },
             builder: (context, state) {
-              if (state is GetAllLoadingState) {
+              if (state is GetAllLoadingState && page == 1) {
                 return const Center(
                   child: CircularProgressIndicator(),
                 );
-              } else if (state is GetAllLoadedState) {
-                return ListView.builder(
-                    itemCount: getAllCustomers?.customers.length ?? 0,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    itemBuilder: (context, index) {
-                      return CustomerCard(
-                        id: getAllCustomers!.customers[index].id,
-                        firstName: getAllCustomers!.customers[index].firstName,
-                        lastName: getAllCustomers!.customers[index].lastName,
-                        email: getAllCustomers!.customers[index].email,
-                        phoneNumber:
-                            getAllCustomers!.customers[index].phoneNumber,
-                        image: getAllCustomers!
-                            .customers[index].avatar.firstOrNull?.originalUrl,
-                      );
-                    });
               } else {
-                return Center(
-                  child: Text('error'),
+                return SmartRefresher(
+                  onRefresh: () {
+                    customers = [];
+                    paginationGetAllFun();
+                  },
+                  controller: refreshController,
+                  enablePullUp: true,
+                  onLoading: () {
+                    page++;
+                    onLoading(page);
+                  },
+                  child: ListView.builder(
+                      itemCount: customers.length,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      itemBuilder: (context, index) {
+                        return CustomerCard(
+                          id: customers[index].id,
+                          firstName: customers[index].firstName,
+                          lastName: customers[index].lastName,
+                          email: customers[index].email,
+                          phoneNumber: customers[index].phoneNumber,
+                          image:
+                              customers[index].avatar.firstOrNull?.originalUrl,
+                        );
+                      }),
                 );
               }
             }));

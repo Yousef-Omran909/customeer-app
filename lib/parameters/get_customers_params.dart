@@ -11,15 +11,16 @@ class GetAllParams extends ParamsModel<GetAllParamsBody> {
   String? get url => 'customer';
 
   @override
-  Map<String, String> get urlParams => body?.toJson() ?? {};
+  Map<String, dynamic> get urlParams => body?.toJson() ?? {};
 
   @override
   List<Object?> get props => [url, urlParams, requestType, body];
 }
 
 class GetAllParamsBody extends BaseBodyModel {
-  GetAllParamsBody();
-
+  GetAllParamsBody({required this.page});
+  final int page;
   @override
-  Map<String, String> toJson() => {"limit": "10", "with_pagination": "yes"};
+  Map<String, dynamic> toJson() =>
+      {"with_pagination": "yes", "limit": "10", "page": page};
 }
